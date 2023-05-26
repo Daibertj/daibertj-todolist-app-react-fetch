@@ -1,10 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+const URLBASE = "https://assets.breatheco.de/apis/fake/todos/user/daibert"
 
 
 //create your first component
 const Todos = () => {
 	const [valueEntry, setValueEntry] = useState("")
 	const [tasks, setTasks] = useState([])
+	
+
+	const getTask = async () => {
+		try {
+			let response = await fetch(`${URLBASE}`)
+			let data = await response.json()
+
+			if(response.status == 404){
+				console.log("Te invitamos a crear tu usuario")
+				createUser()
+			}else{
+				setTasks(data)
+			}
+
+		} catch (error) {
+			console.log(error)
+		}
+	}
+
+	const createUser = async() => {
+		try {
+			let response = await fetch(`${URLBASE}`, {
+				method: "POST",
+				header: {"Content-type": "application/json"},
+				body: JSON.stringify([])
+			})
+			if(response.ok){
+				getTask()
+			}else{
+				console.log(response)
+			}
+
+		} catch (error) {
+			console.log(error)
+		}
+	}
+
+	const addTask = async() => {
+		try {
+			let response = await fetch(`${URLBASE}`, {
+				method: "PUT",
+				header: {"Content-type": "application/json"},
+				body: JSON.stringify([...tasks, {label: valueEntry, done : false}])
+			})
+			if(response.ok){
+				getTask()
+			}else{
+				console.log(response)
+			}
+		} catch (error) {
+			console.log(error)
+		}
+	}
+
+	const deleteAllTaks = async() =>{
+		try {
+			let response = await fetch(`${URLBASE}`, {
+				method: "DELETE",
+				heater: {"Content-type": "application/json"}				
+			})
+		} catch (error) {
+			console.log(error)
+		}
+	}
+	
+
+	useEffect(()=> {
+		getTask()
+	}, [])
 
 	return (
 		<>
@@ -20,7 +91,7 @@ const Todos = () => {
 							value={valueEntry}
 							onKeyPress={(e) => {
 								if (e.key === "Enter") {
-									setTasks(tasks.concat(valueEntry));
+									addTask();
 									setValueEntry("")
 								}
 							}}
@@ -29,9 +100,9 @@ const Todos = () => {
 					</li>
 
 					{tasks.map((item, index) => (
-						<li>
+						<li key={index}>
 							<span className="d-flex justify-content-between">
-								{item} <i class="fas fa-times"
+								{item.label} <i className="fas fa-times"
 									onClick={() =>
 										setTasks(
 											tasks.filter(
