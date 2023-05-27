@@ -5,122 +5,157 @@ const URLBASE = "https://assets.breatheco.de/apis/fake/todos/user/daibert"
 
 //create your first component
 const Todos = () => {
-	const [valueEntry, setValueEntry] = useState("")
-	const [tasks, setTasks] = useState([])
-	
+    const [valueEntry, setValueEntry] = useState({ label: "", done: false })
+    const [tasks, setTasks] = useState([])
 
-	const getTask = async () => {
-		try {
-			let response = await fetch(`${URLBASE}`)
-			let data = await response.json()
 
-			if(response.status == 404){
-				console.log("Te invitamos a crear tu usuario")
-				createUser()
-			}else{
-				setTasks(data)
-			}
+    const getTask = async () => {
+        try {
+            let response = await fetch(`${URLBASE}`)
+            let data = await response.json()
 
-		} catch (error) {
-			console.log(error)
-		}
-	}
+            if (response.status == 404) {
+                console.log("Te invitamos a crear tu usuario")
+                createUser()
+            } else {
+                setTasks(data)
+            }
 
-	const createUser = async() => {
-		try {
-			let response = await fetch(`${URLBASE}`, {
-				method: "POST",
-				header: {"Content-type": "application/json"},
-				body: JSON.stringify([])
-			})
-			if(response.ok){
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const createUser = async () => {
+        try {
+            let response = await fetch(`${URLBASE}`, {
+                method: "POST",
+                headers: { "Content-type": "application/json" },
+                body: JSON.stringify([])
+            })
+            if (response.ok) {
+                getTask()
+            } else {
+                console.log(response)
+            }
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const addTask = async (event) => {
+        console.log(event.key)
+
+        if (event.key == "Enter") {
+            try {
+                let response = await fetch(`${URLBASE}`, {
+                    method: "PUT",
+                    headers: { "Content-type": "application/json" },
+                    body: JSON.stringify([...tasks, valueEntry])
+                })
+                if (response.ok) {
+                    getTask()
+                    setValueEntry({ label: "", done: false })
+                } else {
+                    console.log(response)
+                }
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+    }
+
+    const deleteAllTaks = async () => {
+        try {
+            let response = await fetch(`${URLBASE}`, {
+                method: "DELETE",
+                headers: { "Content-type": "application/json" }
+            })
+			if (response.ok) {
 				getTask()
-			}else{
+				
+			} else {
 				console.log(response)
 			}
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
-		} catch (error) {
-			console.log(error)
-		}
-	}
+    const handleChange = ({ target }) => {
+        setValueEntry({
+            ...valueEntry,
+            [target.name]: target.value
+        })
+    }
 
-	const addTask = async() => {
-		try {
-			let response = await fetch(`${URLBASE}`, {
-				method: "PUT",
-				header: {"Content-type": "application/json"},
-				body: JSON.stringify([...tasks, {label: valueEntry, done : false}])
-			})
-			if(response.ok){
-				getTask()
-			}else{
-				console.log(response)
-			}
-		} catch (error) {
-			console.log(error)
-		}
-	}
 
-	const deleteAllTaks = async() =>{
-		try {
-			let response = await fetch(`${URLBASE}`, {
-				method: "DELETE",
-				heater: {"Content-type": "application/json"}				
-			})
-		} catch (error) {
-			console.log(error)
-		}
-	}
-	
+    const deleteTask = async(id) => {
+        console.log(id)
+        try {
+            let response = await fetch(`${URLBASE}`, {
+                method: "PUT",
+                headers: { "Content-type": "application/json" },
+                body: JSON.stringify(tasks.filter((_, index) => index != id))
+            })
+            if (response.ok) {
+                getTask()
+                setValueEntry({ label: "", done: false })
+            } else {
+                console.log(response)
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
-	useEffect(()=> {
-		getTask()
-	}, [])
+    useEffect(() => {
+        getTask()
+    }, [])
 
-	return (
-		<>
+    return (
+        <>
 
-			<div className="container">
+            <div className="container">
 
-				<h1> to-dos </h1>
+                <h1> to-dos </h1>
 
-				<ul>
-					<li>
-						<input type="text"
-							onChange={(e) => setValueEntry(e.target.value)}
-							value={valueEntry}
-							onKeyPress={(e) => {
-								if (e.key === "Enter") {
-									addTask();
-									setValueEntry("")
-								}
-							}}
-							placeholder="What needs to be done?"></input>
+                <ul>
+                    <li>
+                        <input type="text"
+                            placeholder="What needs to be done?"
+                            name="label"
+                            value={valueEntry.label}
+                            onChange={handleChange}
+                            onKeyDown={addTask}
+                        />
+                    </li>
 
-					</li>
+                    {tasks.map((item, index) => (
+                        <li key={index}>
+                            <span className="d-flex justify-content-between">
+                                {item.label}
+                                <i className="fas fa-times"
+                                    onClick={() => deleteTask(index)}
+                                ></i>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+                <div className="d-flex justify-content-between">
+					{tasks.length} items left
+					<button 
+						onClick={() => deleteAllTaks()}
+						type="button" 
+						className="btn btn-danger">Delete All</button>
+				</div>
+				
+            </div >
 
-					{tasks.map((item, index) => (
-						<li key={index}>
-							<span className="d-flex justify-content-between">
-								{item.label} <i className="fas fa-times"
-									onClick={() =>
-										setTasks(
-											tasks.filter(
-												(t, currentIndex) =>
-													index != currentIndex
-											)
-										)
-									}></i>
-							</span>
-						</li>
-					))}
-				</ul>
-				<div>{tasks.length} items left</div>
-
-			</div >
-
-		</>
-	);
+        </>
+    );
 };
 
 export default Todos;
